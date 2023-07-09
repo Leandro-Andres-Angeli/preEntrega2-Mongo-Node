@@ -53,8 +53,38 @@ server.get("/frutas/descripcion/:desc", async (req, res) => {
     await disconnectToMongo();
   }
 });
+server.put("/frutas/:id", async (req, res) => {
+ let {id} = req.params
+ id &&= +id
+  let { imagen, nombre, importe, stock } = req.body;
+  imagen ??= "🍓";
+  importe &&= +importe;
+  stock &&= +stock;
+  const updatedFruit = { imagen, nombre, importe, stock };
+  
+  if (!imagen || !nombre || !importe || !stock){
+     return res.status(400).send("Error , datos incompletos");
+    }
+  try {
+    const collection = await connectToCollection("frutas");
+    const checkIfFruit = await collection.findOne({id})
+    if (!checkIfFruit){
+        return  res.status(400).send("Error fruta no encontrada")
+    }
+  
+    await collection.updateOne({id}, { $set :updatedFruit});
+    res
+      .status(200)
+      .send(`Fruta actualizada :\n  ${JSON.stringify(updatedFruit, null, "\t")}`);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send("Server error");
+  } finally {
+    await disconnectToMongo();
+  }
+});
 server.post("/frutas/", async (req, res) => {
-  // id": 21, "imagen": "🍌", "nombre": "Plátano macho", "importe": 330, "stock": 80
+  
   let { imagen, nombre, importe, stock } = req.body;
   imagen ??= "🍓";
   importe &&= +importe;
@@ -71,6 +101,27 @@ server.post("/frutas/", async (req, res) => {
     res
       .status(200)
       .send(`Fruta creada :\n  ${JSON.stringify(newFruit, null, "\t")}`);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send("Server error");
+  } finally {
+    await disconnectToMongo();
+  }
+});
+server.delete("/frutas/:id", async (req, res) => {
+  
+  let { id } = req.params;
+  id &&= +id 
+  try {
+    const collection = await connectToCollection("frutas");
+    const checkIfFruit = await collection.findOne({id})
+    if (!checkIfFruit){
+        return  res.status(400).send("Error fruta no encontrada")
+    }
+    await collection.deleteOne({id});
+    res
+      .status(200)
+      .send(`Fruta Eliminada :\n  ${JSON.stringify(checkIfFruit, null, "\t")}`);
   } catch (err) {
     console.log(err.message);
     res.status(500).send("Server error");
